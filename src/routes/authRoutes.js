@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
 const { authenticateToken } = require("../middleware/auth");
+const upload = require("../utils/fileUpload");
 const {
   validateRegistration,
   validateLogin,
@@ -11,8 +12,13 @@ const {
 } = require("../middleware/validation");
 
 // Authentication routes
-// POST /auth/register - User registration
-router.post("/register", validateRegistration, authController.register);
+// POST /auth/register - User registration (with optional file upload for doctors)
+router.post(
+  "/register",
+  upload.single("document"),
+  validateRegistration,
+  authController.register
+);
 
 // POST /auth/login - User login
 router.post("/login", validateLogin, authController.login);

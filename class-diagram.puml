@@ -1,0 +1,45 @@
+@startuml
+
+' Define User class
+class User {
+  +name: String
+  +email: String
+  +passwordHash: String
+  +phone: String
+  +role: String
+  +profileImage: String
+  +specialty: String
+  +orderNumber: String
+  +yearsOfExperience: Number
+  +acceptsCNAM: Boolean
+  +isVerifiedByAdmin: Boolean
+  +verificationStatus: String
+  +verificationNotes: String
+  +verifiedAt: Date
+  +verifiedBy: User
+  +medicalHistory: String
+  +isEmailVerified: Boolean
+  +createdAt: Date
+  +updatedAt: Date
+}
+
+' Define DoctorProfile class
+class DoctorProfile {
+  +cabinetAddress: String
+  +cabinetPhone: String
+  +consultationFee: Number
+  +consultationDuration: Number
+  +coordinates: Object
+  +services: List<Object>
+  +specializations: List<Object>
+  +languages: List<Object>
+  +bio: String
+  +workingHours: Object
+  +breakTime: Object
+  +cabinetPhotos: List<String>
+}
+
+' Define relationships
+User "1" -- "1" DoctorProfile : has
+
+@enduml

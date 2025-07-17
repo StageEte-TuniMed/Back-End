@@ -12,7 +12,6 @@ require("dotenv").config();
 const express = require("express");
 const connectDB = require("./config/database");
 const cors = require("cors");
-const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT;
@@ -25,7 +24,9 @@ app.use(
   })
 );
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
+
+// Serve static files
+app.use("/uploads", express.static("public/uploads"));
 
 // Connect to MongoDB
 connectDB();
@@ -33,6 +34,8 @@ connectDB();
 // Routes
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api", require("./routes/adminRoutes"));
+app.use("/api/doctor-profile", require("./routes/doctorProfileRoutes"));
 
 // Root route
 app.get("/", (req, res) => {

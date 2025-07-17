@@ -12,9 +12,20 @@ const registerUser = async (userData) => {
     phone,
     role,
     specialty,
-    region,
     medicalHistory,
+    orderNumber,
+    yearsOfExperience,
+    documentUrl,
+    acceptsCNAM,
+    agreeToTerms,
   } = userData;
+
+  // Check if user agreed to terms
+  if (!agreeToTerms || agreeToTerms === "false") {
+    throw new Error(
+      "You must agree to the Terms of Service to create an account"
+    );
+  }
 
   // Check if user already exists
   const existingUser = await User.findOne({ email });
@@ -35,22 +46,42 @@ const registerUser = async (userData) => {
     role,
   };
 
-  // Add conditional fields
+  // Add conditional fields for doctors
   if (role === "DOCTOR") {
-    if (specialty) {
-      userObj.specialty = specialty;
-    }
-    if (region) {
-      userObj.region = region;
-    }
+    if (specialty) userObj.specialty = specialty;
+    if (orderNumber) userObj.orderNumber = orderNumber;
+    if (yearsOfExperience)
+      userObj.yearsOfExperience = parseInt(yearsOfExperience);
+    if (documentUrl) userObj.documentUrl = documentUrl;
+    if (acceptsCNAM !== undefined)
+      userObj.acceptsCNAM = acceptsCNAM === "true" || acceptsCNAM === true;
   }
+
+  // Add conditional fields for patients
   if (role === "PATIENT" && medicalHistory) {
     userObj.medicalHistory = medicalHistory;
   }
 
   // Save user to database
-  const user = new User(userObj);
-  await user.save();
+  let user;
+  try {
+    user = new User(userObj);
+    await user.save();
+  } catch (error) {
+    // Handle MongoDB duplicate key errors
+    if (error.code === 11000) {
+      if (error.keyPattern && error.keyPattern.email) {
+        throw new Error("User already exists with this email");
+      }
+      if (error.keyPattern && error.keyPattern.orderNumber) {
+        throw new Error(
+          "A doctor is already registered with this ONMT registration number. Please verify your registration number or contact support if you believe this is an error."
+        );
+      }
+      throw new Error("A user with this information already exists");
+    }
+    throw error;
+  }
 
   // Generate email verification token
   const verificationToken = jwt.sign(
@@ -84,6 +115,11 @@ const registerUser = async (userData) => {
       role: user.role,
       specialty: user.specialty,
       medicalHistory: user.medicalHistory,
+      orderNumber: user.orderNumber,
+      yearsOfExperience: user.yearsOfExperience,
+      documentUrl: user.documentUrl,
+      acceptsCNAM: user.acceptsCNAM,
+      verificationStatus: user.verificationStatus,
       isEmailVerified: user.isEmailVerified,
     },
     token,
@@ -104,6 +140,13 @@ const loginUser = async (credentials) => {
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
   if (!isPasswordValid) {
     throw new Error("Invalid credentials");
+  }
+
+  // Check if user is verified by admin (only for doctors)
+  if (user.role === "DOCTOR" && !user.isVerifiedByAdmin) {
+    throw new Error(
+      "Your account is pending admin verification. Please wait for approval before logging in."
+    );
   }
 
   // Generate token

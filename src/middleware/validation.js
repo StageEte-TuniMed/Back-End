@@ -40,6 +40,32 @@ const validateRegistration = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage("Specialty must be between 2 and 100 characters"),
+  body("orderNumber")
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage("Order number must be between 2 and 50 characters"),
+  body("yearsOfExperience")
+    .optional()
+    .isInt({ min: 0, max: 70 })
+    .withMessage("Years of experience must be between 0 and 70"),
+  body("acceptsCNAM")
+    .optional()
+    .custom((value) => {
+      // Accept boolean or string representation of boolean
+      if (typeof value === "boolean") return true;
+      if (value === "true" || value === "false") return true;
+      throw new Error("CNAM acceptance must be true or false");
+    })
+    .withMessage("CNAM acceptance must be true or false"),
+  body("agreeToTerms")
+    .custom((value) => {
+      // Accept boolean or string representation of boolean
+      if (typeof value === "boolean") return value === true;
+      if (value === "true") return true;
+      throw new Error("You must agree to the Terms of Service");
+    })
+    .withMessage("You must agree to the Terms of Service"),
   body("medicalHistory")
     .optional()
     .trim()

@@ -18,14 +18,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  profileImage: {
-    type: String,
-    default: "",
-  },
   role: {
     type: String,
     enum: ["PATIENT", "DOCTOR", "ADMIN"],
     required: true,
+  },
+  profileImage: {
+    type: String, // URL to the profile image
   },
   specialty: {
     type: String,
@@ -33,9 +32,47 @@ const userSchema = new mongoose.Schema({
       return this.role === "DOCTOR";
     },
   },
-  region: {
+  // Doctor verification fields (Tunisia specific)
+  orderNumber: {
     type: String,
-    required: false, // Make it optional for now to avoid breaking existing functionality
+    required: function () {
+      return this.role === "DOCTOR";
+    },
+    unique: true,
+    sparse: true, // Allows null values while maintaining uniqueness for non-null values
+  },
+  yearsOfExperience: {
+    type: Number,
+    required: false,
+  },
+  // CNAM (Caisse Nationale d'Assurance Maladie) acceptance
+  acceptsCNAM: {
+    type: Boolean,
+    required: function () {
+      return this.role === "DOCTOR";
+    },
+    default: false,
+  },
+  isVerifiedByAdmin: {
+    type: Boolean,
+    default: false,
+  },
+  verificationStatus: {
+    type: String,
+    enum: ["PENDING", "APPROVED", "REJECTED"],
+    default: function () {
+      return this.role === "DOCTOR" ? "PENDING" : undefined;
+    },
+  },
+  verificationNotes: {
+    type: String, // Admin can add notes about verification
+  },
+  verifiedAt: {
+    type: Date,
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User", // Reference to admin who verified
   },
   medicalHistory: {
     type: String,

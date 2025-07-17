@@ -23,6 +23,7 @@
   "author": "Nassim Khaldi",
   "license": "MIT",
   "dependencies": {
+    "@turf/turf": "^7.2.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
@@ -36,7 +37,9 @@
     "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
-    "nodemailer": "^7.0.4"
+    "multer-gridfs-storage": "^5.0.2",
+    "nodemailer": "^7.0.4",
+    "sharp": "^0.34.3"
   },
   "devDependencies": {
     "eslint": "^8.47.0",

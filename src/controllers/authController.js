@@ -4,6 +4,11 @@ const authService = require("../services/authService");
 
 const register = async (req, res) => {
   try {
+    // Handle file upload for doctors
+    if (req.file) {
+      req.body.documentUrl = `/uploads/${req.file.filename}`;
+    }
+
     const result = await authService.registerUser(req.body);
     res.status(201).json({
       message: "User registered successfully",
