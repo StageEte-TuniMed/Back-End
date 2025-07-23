@@ -1,9 +1,13 @@
 const AvailabilitySlot = require("../models/AvailabilitySlot");
 
 // **Get All Availability Slots**
-const getAvailabilitySlots = async () => {
+const getAvailabilitySlots = async (doctorId = null) => {
   try {
-    return await AvailabilitySlot.find();
+    const query = doctorId ? { doctorId } : {};
+    return await AvailabilitySlot.find(query).populate(
+      "doctorId",
+      "name email"
+    );
   } catch (error) {
     throw new Error(error.message);
   }
@@ -59,10 +63,52 @@ const deleteAvailabilitySlot = async (id) => {
   }
 };
 
+// **Mark Availability Slot as Booked**
+const markSlotAsBooked = async (doctorId, date, startTime) => {
+  try {
+    const slot = await AvailabilitySlot.findOne({
+      doctorId,
+      date: new Date(date),
+      startTime,
+    });
+
+    if (slot) {
+      slot.isBooked = true;
+      await slot.save();
+      return slot;
+    }
+    return null;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
+// **Mark Availability Slot as Available (for cancellations)**
+const markSlotAsAvailable = async (doctorId, date, startTime) => {
+  try {
+    const slot = await AvailabilitySlot.findOne({
+      doctorId,
+      date: new Date(date),
+      startTime,
+    });
+
+    if (slot) {
+      slot.isBooked = false;
+      await slot.save();
+      return slot;
+    }
+    return null;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
 module.exports = {
   getAvailabilitySlots,
   getAvailabilitySlotById,
   createAvailabilitySlot,
   updateAvailabilitySlot,
   deleteAvailabilitySlot,
+  markSlotAsBooked,
+  markSlotAsAvailable,
 };

@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getAppointments,
   getAppointmentById,
+  getAppointmentsByDoctorId,
   createAppointment,
   updateAppointment,
   deleteAppointment,
@@ -12,6 +13,16 @@ const {
 router.get("/appointments", async (req, res) => {
   try {
     const appointments = await getAppointments();
+    res.status(200).json(appointments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// **Get Appointments By Doctor ID**
+router.get("/appointments/doctor/:doctorId", async (req, res) => {
+  try {
+    const appointments = await getAppointmentsByDoctorId(req.params.doctorId);
     res.status(200).json(appointments);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -31,7 +42,8 @@ router.get("/appointments/:id", async (req, res) => {
 // **Create Appointment**
 router.post("/appointments", async (req, res) => {
   try {
-    const appointment = await createAppointment(req.body);
+    const io = req.app.get("io");
+    const appointment = await createAppointment(req.body, io);
     res.status(201).json(appointment);
   } catch (error) {
     res.status(400).json({ message: error.message });

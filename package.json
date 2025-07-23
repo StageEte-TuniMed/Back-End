@@ -39,7 +39,9 @@
     "multer": "^2.0.1",
     "multer-gridfs-storage": "^5.0.2",
     "nodemailer": "^7.0.4",
-    "sharp": "^0.34.3"
+    "sharp": "^0.34.3",
+    "socket.io": "^4.8.1",
+    "stripe": "^18.3.0"
   },
   "devDependencies": {
     "eslint": "^8.47.0",
