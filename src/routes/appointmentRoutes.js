@@ -4,6 +4,7 @@ const {
   getAppointments,
   getAppointmentById,
   getAppointmentsByDoctorId,
+  getAppointmentsByPatientId,
   createAppointment,
   updateAppointment,
   deleteAppointment,
@@ -23,6 +24,16 @@ router.get("/appointments", async (req, res) => {
 router.get("/appointments/doctor/:doctorId", async (req, res) => {
   try {
     const appointments = await getAppointmentsByDoctorId(req.params.doctorId);
+    res.status(200).json(appointments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// **Get Appointments By Patient ID**
+router.get("/appointments/patient/:patientId", async (req, res) => {
+  try {
+    const appointments = await getAppointmentsByPatientId(req.params.patientId);
     res.status(200).json(appointments);
   } catch (error) {
     res.status(500).json({ message: error.message });

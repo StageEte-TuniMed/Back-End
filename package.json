@@ -12,7 +12,8 @@
     "lint:fix": "eslint src/ --fix",
     "build": "echo 'Build process here'",
     "migrate": "echo 'Database migration here'",
-    "seed": "echo 'Database seeding here'"
+    "seed": "echo 'Database seeding here'",
+    "seed:specialties": "node src/utils/seedSpecialties.js"
   },
   "keywords": [
     "express",
@@ -41,7 +42,8 @@
     "nodemailer": "^7.0.4",
     "sharp": "^0.34.3",
     "socket.io": "^4.8.1",
-    "stripe": "^18.3.0"
+    "stripe": "^18.3.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "eslint": "^8.47.0",

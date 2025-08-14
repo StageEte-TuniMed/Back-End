@@ -1,4 +1,5 @@
 const Appointment = require("../models/Appointment");
+const User = require("../models/User");
 const {
   markSlotAsBooked,
   markSlotAsAvailable,
@@ -28,7 +29,9 @@ const getAppointmentById = async (id) => {
 // **Get Appointments By Doctor ID**
 const getAppointmentsByDoctorId = async (doctorId) => {
   try {
-    return await Appointment.find({ doctorId }).sort({ datetime: 1 });
+    return await Appointment.find({ doctorId })
+      .populate("patientId", "name email phone")
+      .sort({ datetime: 1 });
   } catch (error) {
     throw new Error(error.message);
   }
@@ -200,10 +203,31 @@ const deleteAppointment = async (id) => {
   }
 };
 
+// **Get Appointments By Patient ID**
+const getAppointmentsByPatientId = async (patientId) => {
+  try {
+    // Get the patient user to find their email
+    const patient = await User.findById(patientId);
+    if (!patient) {
+      throw new Error("Patient not found");
+    }
+
+    // Find appointments either by patientId OR by matching email in patientInfo
+    return await Appointment.find({
+      $or: [{ patientId: patientId }, { "patientInfo.email": patient.email }],
+    })
+      .populate("doctorId", "name email phone specialty")
+      .sort({ datetime: 1 });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
 module.exports = {
   getAppointments,
   getAppointmentById,
   getAppointmentsByDoctorId,
+  getAppointmentsByPatientId,
   createAppointment,
   updateAppointment,
   deleteAppointment,

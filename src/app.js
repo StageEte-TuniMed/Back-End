@@ -47,6 +47,14 @@ app.set("io", io);
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
+  // User authentication and room joining
+  socket.on("authenticate", (userData) => {
+    socket.userId = userData.userId;
+    socket.userRole = userData.role;
+    socket.userName = userData.name;
+    console.log(`User authenticated: ${userData.name} (${userData.role})`);
+  });
+
   // Join doctor room for notifications
   socket.on("join-doctor-room", (doctorId) => {
     socket.join(`doctor-${doctorId}`);
@@ -57,6 +65,65 @@ io.on("connection", (socket) => {
   socket.on("join-availability-room", (doctorId) => {
     socket.join(`availability-${doctorId}`);
     console.log(`Client joined availability room for doctor ${doctorId}`);
+  });
+
+  // Chat functionality
+  socket.on("join-chat-room", (chatRoomId) => {
+    socket.join(`chat-${chatRoomId}`);
+    console.log(`User ${socket.userId} joined chat room: ${chatRoomId}`);
+  });
+
+  socket.on("leave-chat-room", (chatRoomId) => {
+    socket.leave(`chat-${chatRoomId}`);
+    console.log(`User ${socket.userId} left chat room: ${chatRoomId}`);
+  });
+
+  socket.on("typing-start", (chatRoomId) => {
+    socket.to(`chat-${chatRoomId}`).emit("user-typing", {
+      userId: socket.userId,
+      userName: socket.userName,
+      isTyping: true,
+    });
+  });
+
+  socket.on("typing-stop", (chatRoomId) => {
+    socket.to(`chat-${chatRoomId}`).emit("user-typing", {
+      userId: socket.userId,
+      userName: socket.userName,
+      isTyping: false,
+    });
+  });
+
+  // Video call signaling
+  socket.on("video-call-offer", (data) => {
+    socket.to(`chat-${data.chatRoomId}`).emit("video-call-offer", {
+      offer: data.offer,
+      from: socket.userId,
+      sessionId: data.sessionId,
+    });
+  });
+
+  socket.on("video-call-answer", (data) => {
+    socket.to(`chat-${data.chatRoomId}`).emit("video-call-answer", {
+      answer: data.answer,
+      from: socket.userId,
+      sessionId: data.sessionId,
+    });
+  });
+
+  socket.on("video-call-ice-candidate", (data) => {
+    socket.to(`chat-${data.chatRoomId}`).emit("video-call-ice-candidate", {
+      candidate: data.candidate,
+      from: socket.userId,
+      sessionId: data.sessionId,
+    });
+  });
+
+  socket.on("video-call-reject", (data) => {
+    socket.to(`chat-${data.chatRoomId}`).emit("video-call-rejected", {
+      from: socket.userId,
+      sessionId: data.sessionId,
+    });
   });
 
   socket.on("disconnect", () => {
@@ -73,6 +140,11 @@ app.use("/api", require("./routes/availabilitySlotRoutes"));
 app.use("/api/appointments", require("./routes/appointmentRoutes"));
 app.use("/api", require("./routes/notificationRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
+app.use("/api/specialties", require("./routes/specialtyRoutes"));
+app.use("/api/chat", require("./routes/chatRoutes"));
+app.use("/api/video-call", require("./routes/videoCallRoutes"));
+app.use("/api/chat", require("./routes/chatRoutes"));
+app.use("/api/video-call", require("./routes/videoCallRoutes"));
 
 // Root route
 app.get("/", (req, res) => {

@@ -45,6 +45,12 @@ const userSchema = new mongoose.Schema({
     type: Number,
     required: false,
   },
+  documentUrl: {
+    type: String, // URL/path to the uploaded verification document
+    required: function () {
+      return this.role === "DOCTOR";
+    },
+  },
   // CNAM (Caisse Nationale d'Assurance Maladie) acceptance
   acceptsCNAM: {
     type: Boolean,
