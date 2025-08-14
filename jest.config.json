@@ -1,0 +1,23 @@
+{
+  "testEnvironment": "node",
+  "testMatch": ["**/src/test/**/*.test.js", "**/src/test/**/*.spec.js"],
+  "collectCoverageFrom": [
+    "src/**/*.js",
+    "!src/test/**",
+    "!src/app.js",
+    "!**/node_modules/**",
+    "!**/coverage/**"
+  ],
+  "coverageDirectory": "coverage",
+  "coverageReporters": ["text", "lcov", "html"],
+  "setupFilesAfterEnv": ["<rootDir>/src/test/setup.js"],
+  "testTimeout": 10000,
+  "coverageThreshold": {
+    "global": {
+      "branches": 70,
+      "functions": 70,
+      "lines": 70,
+      "statements": 70
+    }
+  }
+}

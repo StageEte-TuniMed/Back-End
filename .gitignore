@@ -19,6 +19,10 @@ pids/
 # Coverage directory used by tools like istanbul
 coverage/
 
+# SonarQube
+.sonar/
+.scannerwork/
+
 # Dependency directories
 node_modules/
 jspm_packages/
