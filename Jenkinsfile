@@ -5,6 +5,11 @@ pipeline {
         nodejs 'NodeJS'
     }
     
+    environment {
+        // Uncomment and set your token here if global env vars don't work
+        // SONAR_TOKEN = 'your_token_here'
+    }
+    
     stages {
         stage('Checkout') {
             steps {
