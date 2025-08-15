@@ -48,10 +48,22 @@ pipeline {
                     }
                     
                     if (workingUrl) {
-                        sh "npx sonar-scanner -Dsonar.host.url=${workingUrl} -Dsonar.token=${SONAR_TOKEN}"
+                        def token = env.SONAR_TOKEN ?: ''
+                        if (token) {
+                            echo "🔑 Using SONAR_TOKEN for authentication"
+                            sh "npx sonar-scanner -Dsonar.host.url=${workingUrl} -Dsonar.token=${token}"
+                        } else {
+                            echo "⚠️ No SONAR_TOKEN found, running without authentication"
+                            sh "npx sonar-scanner -Dsonar.host.url=${workingUrl}"
+                        }
                     } else {
                         echo "❌ No SonarQube server accessible. Trying localhost:9000 anyway..."
-                        sh "npx sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.token=${SONAR_TOKEN}"
+                        def token = env.SONAR_TOKEN ?: ''
+                        if (token) {
+                            sh "npx sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.token=${token}"
+                        } else {
+                            sh "npx sonar-scanner -Dsonar.host.url=http://localhost:9000"
+                        }
                     }
                 }
             }
