@@ -27,7 +27,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 sh 'npm run test:coverage'
-                sh 'npx sonar-scanner -Dsonar.host.url=http://172.17.0.1:9000'
+                sh 'npx sonar-scanner -Dsonar.host.url=http://172.17.0.1:9000 -Dsonar.token=${SONAR_TOKEN}'
             }
         }
         
