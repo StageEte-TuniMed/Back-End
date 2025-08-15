@@ -5,11 +5,6 @@ pipeline {
         nodejs 'NodeJS'
     }
     
-    environment {
-        // Add your SonarQube token here (replace with your actual token)
-        SONAR_TOKEN = 'squ_3fcb4a335911591f2d3853fae092bf9266dcbc3d'
-    }
-    
     stages {
         stage('Checkout') {
             steps {
@@ -32,48 +27,23 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 sh 'npm run test:coverage || true'
-                script {
-                    // Debug: Show environment variables
-                    echo "🔍 Debugging environment variables..."
-                    sh 'echo "SONAR_TOKEN length: ${#SONAR_TOKEN}"'
-                    sh 'env | grep -i sonar || echo "No SONAR variables found"'
-                    
-                    // Try different SonarQube URLs
-                    def sonarUrls = [
-                        'http://172.17.0.1:9000',      // Docker bridge IP (works from container)
-                        'http://host.docker.internal:9000', // Docker Desktop
-                        'http://localhost:9000'         // Local (works from host)
-                    ]
-                    
-                    def workingUrl = null
-                    for (url in sonarUrls) {
-                        def result = sh(returnStatus: true, script: "curl -s --connect-timeout 5 ${url} > /dev/null")
-                        if (result == 0) {
-                            workingUrl = url
-                            echo "✅ Found working SonarQube URL: ${url}"
-                            break
-                        } else {
-                            echo "❌ ${url} not accessible"
+                
+                // Use Jenkins credentials for SonarQube token
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                    script {
+                        def sonarUrls = ['http://172.17.0.1:9000', 'http://localhost:9000']
+                        
+                        for (url in sonarUrls) {
+                            def result = sh(returnStatus: true, script: "curl -s --connect-timeout 5 ${url} > /dev/null")
+                            if (result == 0) {
+                                echo "✅ Using SonarQube at: ${url}"
+                                sh "npx sonar-scanner -Dsonar.host.url=${url} -Dsonar.token=${SONAR_TOKEN}"
+                                return
+                            }
                         }
-                    }
-                    
-                    if (workingUrl) {
-                        def token = env.SONAR_TOKEN ?: ''
-                        if (token) {
-                            echo "🔑 Using SONAR_TOKEN for authentication"
-                            sh "npx sonar-scanner -Dsonar.host.url=${workingUrl} -Dsonar.token=${token}"
-                        } else {
-                            echo "⚠️ No SONAR_TOKEN found, running without authentication"
-                            sh "npx sonar-scanner -Dsonar.host.url=${workingUrl}"
-                        }
-                    } else {
-                        echo "❌ No SonarQube server accessible. Trying localhost:9000 anyway..."
-                        def token = env.SONAR_TOKEN ?: ''
-                        if (token) {
-                            sh "npx sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.token=${token}"
-                        } else {
-                            sh "npx sonar-scanner -Dsonar.host.url=http://localhost:9000"
-                        }
+                        
+                        echo "⚠️ SonarQube not accessible, trying localhost anyway..."
+                        sh "npx sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.token=${SONAR_TOKEN}"
                     }
                 }
             }
@@ -81,7 +51,16 @@ pipeline {
         
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t tunimed-backend .'
+                script {
+                    // Check if Docker is available
+                    def dockerAvailable = sh(returnStatus: true, script: 'which docker > /dev/null 2>&1')
+                    if (dockerAvailable == 0) {
+                        echo "🐳 Building Docker image..."
+                        sh 'docker build -t tunimed-backend .'
+                    } else {
+                        echo "⚠️ Docker not available in Jenkins environment, skipping Docker build"
+                    }
+                }
             }
         }
     }
