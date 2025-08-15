@@ -24,7 +24,7 @@ pipeline {
             }
         }
         
-    stage('SonarQube Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 script {
                     // Ensure we can reach the host machine's SonarQube from inside the Jenkins agent container.
