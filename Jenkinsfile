@@ -28,6 +28,11 @@ pipeline {
             steps {
                 sh 'npm run test:coverage || true'
                 script {
+                    // Debug: Show environment variables
+                    echo "🔍 Debugging environment variables..."
+                    sh 'echo "SONAR_TOKEN length: ${#SONAR_TOKEN}"'
+                    sh 'env | grep -i sonar || echo "No SONAR variables found"'
+                    
                     // Try different SonarQube URLs
                     def sonarUrls = [
                         'http://172.17.0.1:9000',      // Docker bridge IP (works from container)
