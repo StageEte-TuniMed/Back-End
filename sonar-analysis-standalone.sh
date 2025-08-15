@@ -63,6 +63,22 @@ echo "   Project: tunimed-backend"
 echo "   Sources: src/"
 echo "   Tests: src/test/"
 
+# Check for authentication token
+SONAR_AUTH=""
+if [ ! -z "$SONAR_TOKEN" ]; then
+    echo "🔑 Using SONAR_TOKEN for authentication"
+    SONAR_AUTH="-Dsonar.token=$SONAR_TOKEN"
+elif [ ! -z "$SONAR_AUTH_TOKEN" ]; then
+    echo "🔑 Using SONAR_AUTH_TOKEN for authentication"
+    SONAR_AUTH="-Dsonar.login=$SONAR_AUTH_TOKEN"
+elif [ ! -z "$SONAR_LOGIN" ]; then
+    echo "🔑 Using SONAR_LOGIN for authentication"
+    SONAR_AUTH="-Dsonar.login=$SONAR_LOGIN"
+else
+    echo "⚠️ No authentication token found. Trying anonymous access..."
+    SONAR_AUTH=""
+fi
+
 # Try different methods to run sonar-scanner
 if command -v sonar-scanner &> /dev/null; then
     echo "📦 Using system sonar-scanner"
@@ -78,7 +94,8 @@ if command -v sonar-scanner &> /dev/null; then
         -Dsonar.test.inclusions="**/*.test.js,**/*.spec.js" \
         -Dsonar.language=js \
         -Dsonar.sourceEncoding=UTF-8 \
-        -Dsonar.qualitygate.wait=false
+        -Dsonar.qualitygate.wait=false \
+        $SONAR_AUTH
 elif command -v npx &> /dev/null; then
     echo "📦 Using npx sonar-scanner"
     npx sonar-scanner \
@@ -93,10 +110,15 @@ elif command -v npx &> /dev/null; then
         -Dsonar.test.inclusions="**/*.test.js,**/*.spec.js" \
         -Dsonar.language=js \
         -Dsonar.sourceEncoding=UTF-8 \
-        -Dsonar.qualitygate.wait=false
+        -Dsonar.qualitygate.wait=false \
+        $SONAR_AUTH
 else
     echo "📦 Using npm run sonar with URL override"
-    npm run sonar -- -Dsonar.host.url="$WORKING_URL"
+    if [ ! -z "$SONAR_AUTH" ]; then
+        npm run sonar -- -Dsonar.host.url="$WORKING_URL" $SONAR_AUTH
+    else
+        npm run sonar -- -Dsonar.host.url="$WORKING_URL"
+    fi
 fi
 
 echo "✅ SonarQube analysis completed successfully!"
