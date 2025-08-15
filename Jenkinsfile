@@ -27,27 +27,39 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    // Try multiple SonarQube endpoints since host.docker.internal isn't working
+                    // Try multiple SonarQube endpoints and find the working one
                     def sonarUrl = 'http://localhost:9000'
+                    def workingUrl = null
                     
                     // Check if we're in a container and try different URLs
                     def isContainer = sh(returnStatus: true, script: 'test -f /.dockerenv') == 0
                     if (isContainer) {
                         echo "Running in container, trying different SonarQube URLs..."
-                        def candidates = ['http://172.17.0.1:9000', 'http://host.docker.internal:9000', 'http://sonarqube:9000']
+                        def candidates = ['http://172.17.0.1:9000', 'http://host.docker.internal:9000', 'http://sonarqube:9000', 'http://localhost:9000']
                         for (url in candidates) {
                             def code = sh(returnStdout: true, script: "curl -s -o /dev/null -w '%{http_code}' ${url} || echo '000'").trim()
                             echo "Testing ${url}: HTTP ${code}"
                             if (code == '200' || code == '302') {
-                                sonarUrl = url
+                                workingUrl = url
+                                echo "✓ Found working SonarQube URL: ${url}"
                                 break
                             }
+                        }
+                        
+                        if (workingUrl) {
+                            sonarUrl = workingUrl
+                        } else {
+                            echo "⚠ No working SonarQube URL found, using default: ${sonarUrl}"
                         }
                     }
                     
                     echo "Using SonarQube URL: ${sonarUrl}"
+                    
+                    // Generate coverage before analysis
+                    sh 'npm run test:coverage'
+                    
                     withSonarQubeEnv('sonarqube') {
-                        sh "npm run sonar -- -Dsonar.host.url=${sonarUrl}"
+                        sh "npm run sonar -- -Dsonar.host.url=${sonarUrl} -Dsonar.login=${SONAR_AUTH_TOKEN}"
                     }
                 }
             }
