@@ -63,19 +63,41 @@ echo "   Project: tunimed-backend"
 echo "   Sources: src/"
 echo "   Tests: src/test/"
 
-sonar-scanner \
-    -Dsonar.host.url="$WORKING_URL" \
-    -Dsonar.projectKey=tunimed-backend \
-    -Dsonar.projectName="TuniMed Backend API" \
-    -Dsonar.projectVersion=1.0.0 \
-    -Dsonar.sources=src \
-    -Dsonar.tests=src/test \
-    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-    -Dsonar.exclusions="**/node_modules/**,**/coverage/**,**/dist/**,**/build/**,**/*.test.js,**/*.spec.js,**/test/**" \
-    -Dsonar.test.inclusions="**/*.test.js,**/*.spec.js" \
-    -Dsonar.language=js \
-    -Dsonar.sourceEncoding=UTF-8 \
-    -Dsonar.qualitygate.wait=false
+# Try different methods to run sonar-scanner
+if command -v sonar-scanner &> /dev/null; then
+    echo "📦 Using system sonar-scanner"
+    sonar-scanner \
+        -Dsonar.host.url="$WORKING_URL" \
+        -Dsonar.projectKey=tunimed-backend \
+        -Dsonar.projectName="TuniMed Backend API" \
+        -Dsonar.projectVersion=1.0.0 \
+        -Dsonar.sources=src \
+        -Dsonar.tests=src/test \
+        -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+        -Dsonar.exclusions="**/node_modules/**,**/coverage/**,**/dist/**,**/build/**,**/*.test.js,**/*.spec.js,**/test/**" \
+        -Dsonar.test.inclusions="**/*.test.js,**/*.spec.js" \
+        -Dsonar.language=js \
+        -Dsonar.sourceEncoding=UTF-8 \
+        -Dsonar.qualitygate.wait=false
+elif command -v npx &> /dev/null; then
+    echo "📦 Using npx sonar-scanner"
+    npx sonar-scanner \
+        -Dsonar.host.url="$WORKING_URL" \
+        -Dsonar.projectKey=tunimed-backend \
+        -Dsonar.projectName="TuniMed Backend API" \
+        -Dsonar.projectVersion=1.0.0 \
+        -Dsonar.sources=src \
+        -Dsonar.tests=src/test \
+        -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+        -Dsonar.exclusions="**/node_modules/**,**/coverage/**,**/dist/**,**/build/**,**/*.test.js,**/*.spec.js,**/test/**" \
+        -Dsonar.test.inclusions="**/*.test.js,**/*.spec.js" \
+        -Dsonar.language=js \
+        -Dsonar.sourceEncoding=UTF-8 \
+        -Dsonar.qualitygate.wait=false
+else
+    echo "📦 Using npm run sonar with URL override"
+    npm run sonar -- -Dsonar.host.url="$WORKING_URL"
+fi
 
 echo "✅ SonarQube analysis completed successfully!"
 echo "🔗 Check your results at: $WORKING_URL/dashboard?id=tunimed-backend"

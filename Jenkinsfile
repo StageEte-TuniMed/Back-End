@@ -5,6 +5,8 @@ pipeline {
     
     tools {
         nodejs 'NodeJS'
+        // Add SonarQube Scanner tool if configured in Jenkins
+        // sonarQubeScanner 'SonarQube Scanner'
     }
     
     stages {
