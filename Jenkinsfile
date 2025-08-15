@@ -30,9 +30,9 @@ pipeline {
                 script {
                     // Try different SonarQube URLs
                     def sonarUrls = [
-                        'http://localhost:9000',
-                        'http://172.17.0.1:9000',
-                        'http://host.docker.internal:9000'
+                        'http://172.17.0.1:9000',      // Docker bridge IP (works from container)
+                        'http://host.docker.internal:9000', // Docker Desktop
+                        'http://localhost:9000'         // Local (works from host)
                     ]
                     
                     def workingUrl = null
