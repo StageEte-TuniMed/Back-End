@@ -16,8 +16,10 @@
     "seed": "echo 'Database seeding here'",
     "seed:specialties": "node src/utils/seedSpecialties.js",
     "sonar": "sonar-scanner",
+    "sonar:auto": "bash run-sonar.sh",
     "sonar:local": "sonar-scanner -Dsonar.host.url=http://localhost:9000",
-    "sonar:with-coverage": "yarn test:coverage && yarn sonar",
+    "sonar:docker": "sonar-scanner -Dsonar.host.url=http://172.17.0.1:9000",
+    "sonar:with-coverage": "npm run test:coverage && npm run sonar",
     "sonar:start": "docker-compose -f docker-compose.sonar.yml up -d",
     "sonar:stop": "docker-compose -f docker-compose.sonar.yml down"
   },
