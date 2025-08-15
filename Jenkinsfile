@@ -6,8 +6,8 @@ pipeline {
     }
     
     environment {
-        // Uncomment and set your token here if global env vars don't work
-        // SONAR_TOKEN = 'your_token_here'
+        // Add your SonarQube token here (replace with your actual token)
+        SONAR_TOKEN = 'squ_3fcb4a335911591f2d3853fae092bf9266dcbc3d'
     }
     
     stages {
