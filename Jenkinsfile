@@ -26,6 +26,7 @@ pipeline {
         
         stage('SonarQube Analysis') {
             steps {
+                echo "=== UPDATED JENKINSFILE VERSION ==="
                 script {
                     // Ensure we can reach the host machine's SonarQube from inside the Jenkins agent container.
                     // Override the host URL explicitly in case the Jenkins global config still points to localhost.
