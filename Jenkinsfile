@@ -5,12 +5,6 @@ pipeline {
         nodejs 'NodeJS'
     }
     
-    stages {   agent any
-    
-    tools {
-        nodejs 'NodeJS'
-    }
-    
     environment {
         // Add your SonarQube token here (replace with your actual token)
         SONAR_TOKEN = 'squ_3fcb4a335911591f2d3853fae092bf9266dcbc3d'
