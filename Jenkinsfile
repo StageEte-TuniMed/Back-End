@@ -26,11 +26,6 @@ pipeline {
         
         stage('SonarQube Analysis') {
             steps {
-                script {
-                    // Test connectivity first
-                    sh 'curl -I http://172.17.0.1:9000 || echo "172.17.0.1 failed"'
-                    sh 'curl -I http://host.docker.internal:9000 || echo "host.docker.internal failed"'
-                }
                 withSonarQubeEnv('scanner') {
                     sh 'npx sonar-scanner'
                 }
