@@ -1,3 +1,3 @@
 module.exports = {
-  mongoURI: 'mongodb://localhost:27017/TuniMedDB',
+  mongoURI: process.env.MONGO_URI || "mongodb://localhost:27017/TuniMedDB",
 };

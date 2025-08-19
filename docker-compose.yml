@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+  db:
+    image: mongo:4.2
+    container_name: db
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27017:27017
+    volumes:
+      - ./data/dump:/dump
+
+  app:
+    build: .
+    image: tunimed-backend:1.0
+    restart: always
+    container_name: tunimed-back
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://root:example@db:27017/TuniMedDB?authSource=admin
+
+volumes:
+  mongo-data:
