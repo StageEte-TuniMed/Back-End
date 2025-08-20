@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tunimed
+  labels:
+    name: tunimed
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nexus-registry-secret
+  namespace: tunimed
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: ewogICJhdXRocyI6IHsKICAgICIxNzIuMTcuMC4xOjgwODMiOiB7CiAgICAgICJ1c2VybmFtZSI6ICJhZG1pbiIsCiAgICAgICJwYXNzd29yZCI6ICJhZG1pbjEyMyIsCiAgICAgICJhdXRoIjogIllXUnRhVzQ2WVdSdGFXNHhNak09IgogICAgfQogIH0KfQ==

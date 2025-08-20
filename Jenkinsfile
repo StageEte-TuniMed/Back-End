@@ -65,7 +65,10 @@ pipeline {
                         sh 'kubectl version --client'
                         sh 'kubectl cluster-info'
                         
-                        // Deploy MongoDB
+                        // Create namespace if it doesn't exist
+                        sh 'kubectl apply -f k8s/namespace.yaml'
+                        
+                        // Deploy MongoDB first
                         sh 'kubectl apply -f k8s/mongodb.yaml'
                         
                         // Wait for MongoDB to be ready (with timeout)
@@ -77,9 +80,13 @@ pipeline {
                         // Wait for deployment to be ready
                         sh 'kubectl wait --for=condition=available --timeout=300s deployment/tunimed-backend || true'
                         
+                        // Apply ingress configuration
+                        sh 'kubectl apply -f k8s/ingress.yaml'
+                        
                         // Show deployment status
-                        sh 'kubectl get pods'
+                        sh 'kubectl get pods -o wide'
                         sh 'kubectl get services'
+                        sh 'kubectl get ingress'
                     }
                 }
             }
