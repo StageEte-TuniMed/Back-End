@@ -14,7 +14,7 @@ services:
 
   app:
     build: .
-    image: tunimed-backend:1.0
+    image: 172.17.0.1:8083/tunimed-backend:1.0
     restart: always
     container_name: tunimed-back
     ports:
