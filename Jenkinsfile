@@ -9,21 +9,18 @@ pipeline {
         registryCredentials = "nexus"
         registry = "172.17.0.1:8083"
         KUBECONFIG_CREDENTIAL_ID = "kubeconfig"
-        IMAGE_NAME = "tunimed-backend"
-        IMAGE_TAG = "1.0"
-        FULL_IMAGE_NAME = "${registry}/${IMAGE_NAME}:${IMAGE_TAG}"
     }
     
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-repo/tunimed-backend.git'
+                checkout scm
             }
         }
         
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                sh 'npm install --legacy-peer-deps'
             }
         }
         
@@ -35,11 +32,8 @@ pipeline {
         
         stage('SonarQube Analysis') {
             steps {
-                script {
-                    def scannerHome = tool 'SonarScanner'
-                    withSonarQubeEnv('SonarQube') {
-                        sh "${scannerHome}/bin/sonar-scanner"
-                    }
+                withSonarQubeEnv('scanner') {
+                    sh 'npx sonar-scanner'
                 }
             }
         }
@@ -47,20 +41,17 @@ pipeline {
         stage('Building images (node and mongo)') {
             steps {
                 script {
-                    sh "docker build -t ${FULL_IMAGE_NAME} ."
-                    echo "Image built: ${FULL_IMAGE_NAME}"
+                    sh('docker-compose build')
                 }
             }
         }
         
+        // Uploading Docker images into Nexus Registry
         stage('Deploy to Nexus') {
             steps {
                 script {
-                    withEnv(["DOCKER_REGISTRY=${registry}"]) {
-                        withDockerRegistry([credentialsId: registryCredentials, url: "http://${registry}"]) {
-                            sh "docker push ${FULL_IMAGE_NAME}"
-                            echo "Image pushed to Nexus: ${FULL_IMAGE_NAME}"
-                        }
+                    docker.withRegistry("http://"+registry, registryCredentials) {
+                        sh('docker push $registry/tunimed-backend:1.0')
                     }
                 }
             }
@@ -70,39 +61,38 @@ pipeline {
             steps {
                 script {
                     withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
-                        // Test cluster connectivity
-                        sh 'kubectl --kubeconfig $KUBECONFIG version --client'
-                        sh 'kubectl --kubeconfig $KUBECONFIG get nodes'
-                        
-                        // Create namespace and registry secret
-                        sh '''
-                            kubectl --kubeconfig $KUBECONFIG create namespace tunimed 2>/dev/null || true
-                            kubectl --kubeconfig $KUBECONFIG delete secret nexus-registry-secret -n tunimed 2>/dev/null || true
-                            kubectl --kubeconfig $KUBECONFIG create secret docker-registry nexus-registry-secret \
-                                --docker-server=172.17.0.1:8083 \
-                                --docker-username=admin \
-                                --docker-password='nassim 2022' \
-                                -n tunimed
-                        '''
+                        // Verify kubectl access
+                        sh 'kubectl version --client'
+                        sh 'kubectl cluster-info'
                         
                         // Load image into Minikube (bypass registry pull issues)
-                        sh "minikube image load ${FULL_IMAGE_NAME}"
+                        sh 'minikube image load $registry/tunimed-backend:1.0'
+                        
+                        // Create namespace if it doesn't exist
+                        sh 'kubectl apply -f k8s/namespace.yaml'
                         
                         // Deploy MongoDB first
-                        sh '''
-                            kubectl --kubeconfig $KUBECONFIG apply -f k8s/namespace.yaml
-                            kubectl --kubeconfig $KUBECONFIG apply -f k8s/mongodb.yaml
-                            kubectl --kubeconfig $KUBECONFIG -n tunimed rollout status deployment/mongodb --timeout=120s || true
-                        '''
+                        sh 'kubectl apply -f k8s/mongodb.yaml'
                         
-                        // Deploy backend application
-                        sh '''
-                            kubectl --kubeconfig $KUBECONFIG apply -f k8s/deployment.yaml
-                            kubectl --kubeconfig $KUBECONFIG -n tunimed rollout status deployment/tunimed-backend --timeout=180s || true
-                        '''
+                        // Wait for MongoDB to be ready (with timeout)
+                        sh 'kubectl wait --for=condition=available --timeout=300s deployment/mongodb || true'
+                        
+                        // Deploy the backend application
+                        sh 'kubectl apply -f k8s/deployment.yaml'
+                        
+                        // Wait for deployment to be ready
+                        sh 'kubectl wait --for=condition=available --timeout=300s deployment/tunimed-backend || true'
+                        
+                        // Apply ingress configuration
+                        sh 'kubectl apply -f k8s/ingress.yaml'
                         
                         // Show deployment status
-                        sh 'kubectl --kubeconfig $KUBECONFIG -n tunimed get pods,svc -o wide'
+                        sh 'kubectl get pods -o wide'
+                        sh 'kubectl get services'
+                        sh 'kubectl get ingress'
+                        
+                        // Clean up temporary file
+                        sh 'rm -f /tmp/kubeconfig'
                     }
                 }
             }
@@ -112,34 +102,15 @@ pipeline {
             steps {
                 script {
                     withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
-                        // Wait for pods to be ready
-                        sh '''
-                            echo "Waiting for pods to be ready..."
-                            kubectl --kubeconfig $KUBECONFIG -n tunimed wait --for=condition=ready pod -l app=mongodb --timeout=120s || true
-                            kubectl --kubeconfig $KUBECONFIG -n tunimed wait --for=condition=ready pod -l app=tunimed-backend --timeout=180s || true
-                        '''
+                        // Check pod status
+                        sh 'kubectl get pods -l app=tunimed-backend -o wide'
+                        sh 'kubectl get pods -l app=mongodb -o wide'
                         
-                        // Get pod status and logs
-                        sh '''
-                            echo "=== Pod Status ==="
-                            kubectl --kubeconfig $KUBECONFIG -n tunimed get pods
-                            
-                            echo "=== Service Status ==="
-                            kubectl --kubeconfig $KUBECONFIG -n tunimed get svc
-                            
-                            echo "=== Backend Pod Logs ==="
-                            kubectl --kubeconfig $KUBECONFIG -n tunimed logs -l app=tunimed-backend --tail=50 || true
-                        '''
+                        // Get service details
+                        sh 'kubectl describe svc tunimed-backend-service'
                         
-                        // Test health endpoint
-                        sh '''
-                            echo "=== Testing Health Endpoint ==="
-                            kubectl --kubeconfig $KUBECONFIG -n tunimed port-forward svc/tunimed-backend-service 8080:80 &
-                            FORWARD_PID=$!
-                            sleep 5
-                            curl -f http://localhost:8080/health || echo "Health check failed"
-                            kill $FORWARD_PID || true
-                        '''
+                        // Show logs if there are issues
+                        sh 'kubectl logs -l app=tunimed-backend --tail=20 || true'
                     }
                 }
             }
@@ -148,13 +119,10 @@ pipeline {
         stage('Run application') {
             steps {
                 script {
-                    sh '''
-                        echo "Starting application with docker-compose..."
-                        docker-compose down || true
-                        docker-compose up -d
-                        sleep 10
-                        docker-compose ps
-                    '''
+                    docker.withRegistry("http://"+registry, registryCredentials) {
+                        sh('docker pull $registry/tunimed-backend:1.0')
+                        sh('docker-compose up -d')
+                    }
                 }
             }
         }
@@ -163,29 +131,12 @@ pipeline {
     post {
         always {
             echo 'Pipeline completed'
-            script {
-                withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
-                    // Clean up port-forwards
-                    sh 'pkill -f "kubectl.*port-forward" || true'
-                    
-                    // Show final status
-                    sh '''
-                        echo "=== Final Cluster Status ==="
-                        kubectl --kubeconfig $KUBECONFIG -n tunimed get all || true
-                    '''
-                }
-            }
         }
         failure {
-            echo 'Pipeline failed'
             script {
+                // Rollback on failure
                 withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
-                    // Rollback deployment on failure
-                    sh '''
-                        echo "Rolling back deployment..."
-                        kubectl --kubeconfig $KUBECONFIG -n tunimed rollout undo deployment/tunimed-backend || true
-                        kubectl --kubeconfig $KUBECONFIG -n tunimed get pods || true
-                    '''
+                    sh 'kubectl rollout undo deployment/tunimed-backend || true'
                 }
             }
         }
