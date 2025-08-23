@@ -43,6 +43,8 @@ spec:
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 5
+      imagePullSecrets:
+        - name: nexus-registry-secret
 ---
 apiVersion: v1
 kind: Service
