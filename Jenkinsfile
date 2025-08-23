@@ -72,21 +72,21 @@ pipeline {
                         sh 'kubectl apply -f k8s/mongodb.yaml'
                         
                         // Wait for MongoDB to be ready (with timeout)
-                        sh 'kubectl wait --for=condition=available --timeout=300s deployment/mongodb || true'
+                        sh 'kubectl wait --for=condition=available --timeout=300s deployment/mongodb -n tunimed || true'
                         
                         // Deploy the backend application
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         
                         // Wait for deployment to be ready
-                        sh 'kubectl wait --for=condition=available --timeout=300s deployment/tunimed-backend || true'
+                        sh 'kubectl wait --for=condition=available --timeout=300s deployment/tunimed-backend -n tunimed || true'
                         
                         // Apply ingress configuration
                         sh 'kubectl apply -f k8s/ingress.yaml'
                         
                         // Show deployment status
-                        sh 'kubectl get pods -o wide'
-                        sh 'kubectl get services'
-                        sh 'kubectl get ingress'
+                        sh 'kubectl get pods -o wide -n tunimed'
+                        sh 'kubectl get services -n tunimed'
+                        sh 'kubectl get ingress -n tunimed'
                         
                         // Clean up temporary file
                         sh 'rm -f /tmp/kubeconfig'
