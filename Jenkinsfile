@@ -65,9 +65,6 @@ pipeline {
                         sh 'kubectl version --client'
                         sh 'kubectl cluster-info'
                         
-                        // Load image into Minikube (bypass registry pull issues)
-                        sh 'minikube image load $registry/tunimed-backend:1.0'
-                        
                         // Create namespace if it doesn't exist
                         sh 'kubectl apply -f k8s/namespace.yaml'
                         
