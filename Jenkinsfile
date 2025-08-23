@@ -100,14 +100,14 @@ pipeline {
                 script {
                     withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
                         // Check pod status
-                        sh 'kubectl get pods -l app=tunimed-backend -o wide'
-                        sh 'kubectl get pods -l app=mongodb -o wide'
+                        sh 'kubectl get pods -l app=tunimed-backend -o wide -n tunimed'
+                        sh 'kubectl get pods -l app=mongodb -o wide -n tunimed'
                         
                         // Get service details
-                        sh 'kubectl describe svc tunimed-backend-service'
+                        sh 'kubectl describe svc tunimed-backend-service -n tunimed'
                         
                         // Show logs if there are issues
-                        sh 'kubectl logs -l app=tunimed-backend --tail=20 || true'
+                        sh 'kubectl logs -l app=tunimed-backend --tail=20 -n tunimed || true'
                     }
                 }
             }

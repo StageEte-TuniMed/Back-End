@@ -22,8 +22,10 @@ spec:
           env:
             - name: NODE_ENV
               value: "production"
+            - name: PORT
+              value: "3000"
             - name: MONGODB_URI
-              value: "mongodb://mongodb-service:27017/tunimed"
+              value: "mongodb://admin:password123@mongodb-service.tunimed:27017/tunimed?authSource=admin"
           resources:
             requests:
               memory: "256Mi"
@@ -50,6 +52,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: tunimed-backend-service
+  namespace: tunimed
   labels:
     app: tunimed-backend
 spec:
@@ -65,6 +68,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: tunimed-backend-config
+  namespace: tunimed
 data:
   NODE_ENV: "production"
   PORT: "3000"
