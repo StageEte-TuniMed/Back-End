@@ -77,11 +77,28 @@ pipeline {
                         // Deploy the backend application
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         
-                        // Delete old failing pods to force restart with new config
-                        sh 'kubectl delete pods -l app=tunimed-backend -n tunimed --grace-period=0 --force || true'
+                        // Force update deployment with environment variables
+                        sh '''
+                            kubectl patch deployment tunimed-backend -n tunimed -p '{
+                                "spec": {
+                                    "template": {
+                                        "spec": {
+                                            "containers": [{
+                                                "name": "tunimed-backend",
+                                                "env": [
+                                                    {"name": "NODE_ENV", "value": "production"},
+                                                    {"name": "PORT", "value": "3000"},
+                                                    {"name": "MONGODB_URI", "value": "mongodb://admin:password123@mongodb-service.tunimed:27017/tunimed?authSource=admin"}
+                                                ]
+                                            }]
+                                        }
+                                    }
+                                }
+                            }'
+                        '''
                         
-                        // Wait for deployment to be ready
-                        sh 'kubectl wait --for=condition=available --timeout=30s deployment/tunimed-backend -n tunimed || true'
+                        // Wait for rollout to complete
+                        sh 'kubectl rollout status deployment/tunimed-backend -n tunimed --timeout=180s'
                         
                         // Apply ingress configuration
                         sh 'kubectl apply -f k8s/ingress.yaml'
