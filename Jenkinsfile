@@ -77,8 +77,11 @@ pipeline {
                         // Deploy the backend application
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         
+                        // Delete old failing pods to force restart with new config
+                        sh 'kubectl delete pods -l app=tunimed-backend -n tunimed --grace-period=0 --force || true'
+                        
                         // Wait for deployment to be ready
-                        sh 'kubectl wait --for=condition=available --timeout=300s deployment/tunimed-backend -n tunimed || true'
+                        sh 'kubectl wait --for=condition=available --timeout=30s deployment/tunimed-backend -n tunimed || true'
                         
                         // Apply ingress configuration
                         sh 'kubectl apply -f k8s/ingress.yaml'
