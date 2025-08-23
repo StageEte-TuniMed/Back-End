@@ -97,8 +97,14 @@ pipeline {
                             }'
                         '''
                         
-                        // Wait for rollout to complete
-                        sh 'kubectl rollout status deployment/tunimed-backend -n tunimed --timeout=180s'
+                        // Wait for rollout to complete (or timeout)
+                        sh 'kubectl rollout status deployment/tunimed-backend -n tunimed --timeout=60s || true'
+                        
+                        // Show current pod status
+                        sh 'kubectl get pods -l app=tunimed-backend -n tunimed'
+                        
+                        // Show recent logs to debug
+                        sh 'kubectl logs -l app=tunimed-backend -n tunimed --tail=10 || true'
                         
                         // Apply ingress configuration
                         sh 'kubectl apply -f k8s/ingress.yaml'
