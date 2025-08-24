@@ -77,34 +77,17 @@ pipeline {
                         // Deploy the backend application
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         
-                        // Force update deployment with environment variables
-                        sh '''
-                            kubectl patch deployment tunimed-backend -n tunimed -p '{
-                                "spec": {
-                                    "template": {
-                                        "spec": {
-                                            "containers": [{
-                                                "name": "tunimed-backend",
-                                                "env": [
-                                                    {"name": "NODE_ENV", "value": "production"},
-                                                    {"name": "PORT", "value": "3000"},
-                                                    {"name": "MONGODB_URI", "value": "mongodb://admin:password123@mongodb-service.tunimed:27017/tunimed?authSource=admin"}
-                                                ]
-                                            }]
-                                        }
-                                    }
-                                }
-                            }'
-                        '''
+                        // Completely delete the deployment and recreate it
+                        sh 'kubectl delete deployment tunimed-backend -n tunimed || true'
+                        sh 'sleep 5'
+                        sh 'kubectl apply -f k8s/deployment.yaml'
                         
-                        // Wait for rollout to complete (or timeout)
-                        sh 'kubectl rollout status deployment/tunimed-backend -n tunimed --timeout=60s || true'
+                        // Wait for new deployment to be ready
+                        sh 'kubectl rollout status deployment/tunimed-backend -n tunimed --timeout=120s || true'
                         
-                        // Show current pod status
+                        // Show current pod status and logs
                         sh 'kubectl get pods -l app=tunimed-backend -n tunimed'
-                        
-                        // Show recent logs to debug
-                        sh 'kubectl logs -l app=tunimed-backend -n tunimed --tail=10 || true'
+                        sh 'kubectl logs -l app=tunimed-backend -n tunimed --tail=15 || true'
                         
                         // Apply ingress configuration
                         sh 'kubectl apply -f k8s/ingress.yaml'
