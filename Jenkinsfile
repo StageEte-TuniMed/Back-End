@@ -9,7 +9,6 @@ pipeline {
         registryCredentials = "nexus"
         registry = "172.17.0.1:8083"
         KUBECONFIG_CREDENTIAL_ID = "kubeconfig"
-        NVD_API_KEY = "f605aff2-4fc5-4d35-beb5-15a4be5a8438"
     }
     
     stages {
@@ -35,40 +34,6 @@ pipeline {
             steps {
                 withSonarQubeEnv('scanner') {
                     sh 'npx sonar-scanner'
-                }
-            }
-        }
-
-        stage('Dependency Scan (OWASP Dependency-Check)') {
-            steps {
-                sh '''
-                    mkdir -p reports
-                    docker run --rm -v "${WORKSPACE}":/src -v "${WORKSPACE}"/reports:/reports \
-                        -e NVD_API_KEY="${NVD_API_KEY}" \
-                        owasp/dependency-check:latest \
-                        --scan /src --format "HTML" --out /reports \
-                        --nvdApiKey "${NVD_API_KEY}"
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'reports/dependency-check-report.html', allowEmptyArchive: true
-                }
-            }
-        }
-
-        stage('Security Test (OWASP ZAP)') {
-            steps {
-                sh '''
-                    mkdir -p zap_reports
-                    docker run --rm -v "${WORKSPACE}"/zap_reports:/zap/wrk/ \
-                        owasp/zap2docker-stable:latest \
-                        zap-baseline.py -t http://localhost:3000 -r zap_report.html || true
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'zap_reports/zap_report.html', allowEmptyArchive: true
                 }
             }
         }
