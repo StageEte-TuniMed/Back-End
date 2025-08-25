@@ -38,6 +38,38 @@ pipeline {
             }
         }
 
+        stage('Dependency Scan (OWASP Dependency-Check)') {
+            steps {
+                sh '''
+                    mkdir -p reports
+                    docker run --rm -v "${WORKSPACE}":/src -v "${WORKSPACE}"/reports:/reports \
+                        owasp/dependency-check:latest \
+                        --scan /src --format "HTML" --out /reports
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'reports/dependency-check-report.html', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Security Test (OWASP ZAP)') {
+            steps {
+                sh '''
+                    mkdir -p zap_reports
+                    docker run --rm -v "${WORKSPACE}"/zap_reports:/zap/wrk/ \
+                        owasp/zap2docker-stable:latest \
+                        zap-baseline.py -t http://localhost:3000 -r zap_report.html || true
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'zap_reports/zap_report.html', allowEmptyArchive: true
+                }
+            }
+        }
+
         stage('Building images (node and mongo)') {
             steps {
                 script {
@@ -77,17 +109,11 @@ pipeline {
                         // Deploy the backend application
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         
-                        // Completely delete the deployment and recreate it
-                        sh 'kubectl delete deployment tunimed-backend -n tunimed || true'
-                        sh 'sleep 5'
-                        sh 'kubectl apply -f k8s/deployment.yaml'
+                        // Delete old failing pods to force restart with new config
+                        sh 'kubectl delete pods -l app=tunimed-backend -n tunimed --grace-period=0 --force || true'
                         
-                        // Wait for new deployment to be ready
-                        sh 'kubectl rollout status deployment/tunimed-backend -n tunimed --timeout=120s || true'
-                        
-                        // Show current pod status and logs
-                        sh 'kubectl get pods -l app=tunimed-backend -n tunimed'
-                        sh 'kubectl logs -l app=tunimed-backend -n tunimed --tail=15 || true'
+                        // Wait for deployment to be ready
+                        sh 'kubectl wait --for=condition=available --timeout=30s deployment/tunimed-backend -n tunimed || true'
                         
                         // Apply ingress configuration
                         sh 'kubectl apply -f k8s/ingress.yaml'
