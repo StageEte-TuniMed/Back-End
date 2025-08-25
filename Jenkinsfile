@@ -9,6 +9,7 @@ pipeline {
         registryCredentials = "nexus"
         registry = "172.17.0.1:8083"
         KUBECONFIG_CREDENTIAL_ID = "kubeconfig"
+        NVD_API_KEY = "f605aff2-4fc5-4d35-beb5-15a4be5a8438"
     }
     
     stages {
@@ -43,8 +44,10 @@ pipeline {
                 sh '''
                     mkdir -p reports
                     docker run --rm -v "${WORKSPACE}":/src -v "${WORKSPACE}"/reports:/reports \
+                        -e NVD_API_KEY="${NVD_API_KEY}" \
                         owasp/dependency-check:latest \
-                        --scan /src --format "HTML" --out /reports
+                        --scan /src --format "HTML" --out /reports \
+                        --nvdApiKey "${NVD_API_KEY}"
                 '''
             }
             post {
