@@ -11,6 +11,7 @@ const notificationSchema = new mongoose.Schema({
       "APPOINTMENT_CANCELLED",
       "PAYMENT_ALERT",
       "AI_RESULT",
+      "PROBLEM_REPORT",
     ],
     required: true,
   },

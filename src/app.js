@@ -143,8 +143,16 @@ app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/specialties", require("./routes/specialtyRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/video-call", require("./routes/videoCallRoutes"));
-app.use("/api/chat", require("./routes/chatRoutes"));
-app.use("/api/video-call", require("./routes/videoCallRoutes"));
+
+// Add logging middleware for problem reports
+app.use("/api/problem-reports", (req, res, next) => {
+  console.log(`🌐 Problem Reports API: ${req.method} ${req.path}`);
+  console.log("🔗 Full URL:", req.originalUrl);
+  console.log("📄 Query params:", req.query);
+  next();
+});
+
+app.use("/api/problem-reports", require("./routes/problemReports"));
 
 // Root route
 app.get("/", (req, res) => {
