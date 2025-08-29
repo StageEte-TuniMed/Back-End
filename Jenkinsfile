@@ -38,6 +38,27 @@ pipeline {
             }
         }
 
+        stage('Setup Prometheus Monitoring') {
+            steps {
+                sh '''
+                    # Update Prometheus config
+                    docker exec prometheus-p sh -c "cat > /etc/prometheus/prometheus.yml << EOF
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'jenkins'
+    metrics_path: /prometheus
+    static_configs:
+      - targets: ['172.17.0.1:9090']
+EOF"
+                    
+                    # Reload Prometheus config
+                    docker exec prometheus-p killall -HUP prometheus || true
+                '''
+            }
+        }
+
         stage('Building images (node and mongo)') {
             steps {
                 script {
